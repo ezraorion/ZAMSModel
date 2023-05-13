@@ -5,7 +5,7 @@ from stellarstructuretools import *
 from integrationandsolutiontools import *
 import config #global variables go here
 from scipy.interpolate import LinearNDInterpolator #CloughTocher2DInterpolator, NearestNDInterpolator
-from scipy.optimize import root, minimize
+from scipy.optimize import root
 from astropy.io import ascii
 from astropy.table import Table
 
