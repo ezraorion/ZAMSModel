@@ -1,13 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from readingtablestools import *
-from stellarstructuretools import *
-from integrationandsolutiontools import *
-import config #global variables go here
 from scipy.interpolate import LinearNDInterpolator #CloughTocher2DInterpolator, NearestNDInterpolator
 from scipy.optimize import root
 from astropy.io import ascii
 from astropy.table import Table
+from supportfiles.readingtablestools import *
+from supportfiles.stellarstructuretools import *
+from supportfiles.integrationandsolutiontools import *
+import supportfiles.config as config #global variables go here
 
 logR, logkappa, logT = getTRandK(config.fn, config.tablenum) #get the solar values table, Table #73 
 

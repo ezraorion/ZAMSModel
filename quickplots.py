@@ -1,10 +1,11 @@
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import config
 from astropy.io import ascii
 from astropy.table import Table
-matplotlib.use('Agg') #will save figures, but supresses plotting
+import supportfiles.config as config
 
+matplotlib.use('Agg') #will save figures, but supresses plotting
 plt.style.use("dark_background")
 
 table = ascii.read("{}solarmass_star.ecsv".format(config.savename))
@@ -22,8 +23,8 @@ plt.legend(ncols=4,loc="upper left")
 #axes[0,0].scatter(solc.t[-1], np.log10(solc.y[0, -1]), c='magenta')
 #axes[0,0].scatter(sols.t[-1], np.log10(sols.y[0, -1]), c='magenta')
 plt.xlabel("M (M$_*$)")
-plt.savefig("internalstructure_{}solarmass.png".format(config.savename))
-plt.show()
+plt.savefig("./plots/internalstructure_{}Ms.png".format(config.savename))
+plt.close()
 
 figsize=(10,10)
 plt.plot(table["M"]/table["M"][-1], table["Deltaad"], label="$\Delta_{ad}$", c="dodgerblue")
@@ -46,5 +47,5 @@ else:
 plt.legend()
 plt.xlabel("M (M$_*$)")
 plt.ylabel("$\Delta$")
-plt.savefig("Delta_{}solarmass.png".format(config.savename))
-plt.show()
+plt.savefig("./plots/Delta_{}Ms.png".format(config.savename))
+plt.close()
