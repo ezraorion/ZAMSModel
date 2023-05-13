@@ -5,12 +5,9 @@ from stellarstructuretools import *
 from integrationandsolutiontools import *
 import config #global variables go here
 from scipy.interpolate import LinearNDInterpolator #CloughTocher2DInterpolator, NearestNDInterpolator
-from scipy.optimize import minimize
+from scipy.optimize import root, minimize
 from astropy.io import ascii
 from astropy.table import Table
-
-#reading in Porf. Schlaufman's constants file
-exec(open("./constants.py").read())
 
 logR, logkappa, logT = getTRandK(config.fn, config.tablenum) #get the solar values table, Table #73 
 
@@ -39,28 +36,22 @@ rho_const = (3*config.MASS)/(4*np.pi*(Rt**3))
 Pc = (3*G*(config.MASS**2))/(8*np.pi*Rt**4)
 Tc = (G*config.MASS*config.mu)/(2*Rt*Na*k) 
 
-FUDGEFACTOR = 1.2 #constant density model will defintely lowball pressure and temp
-bounds = ((Lt*0.5, Lt*2), (Pc*1e-1,Pc*1e+4),
-          (Tc*1e-1, Tc*1e1), (Rt*0.7, Rt*1.5))
+FUDGEFACTORS = np.array([1, 1e2, 1, 1]) #constant density model will lowball pressure
+#honestly this is a little extreme (-_-;). doesn't work without it though.
+sol = root(shootf, np.array([Lt, Pc, Tc, Rt])*FUDGEFACTORS)
 
-res = minimize(shootf, np.array([Lt, Pc*FUDGEFACTOR, Tc*FUDGEFACTOR, Rt]), method='TNC', 
-	bounds = bounds, options ={"eta":0.08})
-res2 = minimize(shootf, res.x, method='Nelder-Mead', bounds = bounds)
-res3 = minimize(shootf, res2.x, method='Nelder-Mead')
-res4 = minimize(shootf, res3.x, method='Nelder-Mead')
-res5 = minimize(shootf, res4.x, method='Nelder-Mead')
-
-msol, Lsol, Psol, Tsol, Rsol, Esol, kappasol, Deltaadsol, Deltasol, convectivesol = solution(res5.x)
+msol, Lsol, Psol, Tsol, Rsol, Esol, kappasol, Deltaadsol, Deltaradsol, Deltasol, nature = solution(sol.x)
 #np.savez("{}solarmass_star.npz".format(config.savename), msol = msol, Lsol = Lsol, Psol = Psol, Tsol = Tsol, Rsol = Rsol)
 data = Table()
-data['mass'] = msol
-data['L'] = Lsol
-data['P'] = Psol
-data['T'] = Tsol
-data['R'] = Rsol
-data['E'] = Esol
-data['kappa'] = kappasol
-data['Deltaad'] = Deltaadsol
-data['Delta'] = Deltasol
-data['convective'] = convectivesol
+data["M"] = msol
+data["L"] = Lsol
+data["P"] = Psol
+data["T"] = Tsol
+data["R"] = Rsol
+data["Epsilon"] = Esol
+data["kappa"] = kappasol
+data["Deltaad"] = Deltaadsol
+data["Deltarad"] = Deltaradsol
+data["Delta"] = Deltasol
+data["nature"] = nature
 ascii.write(data, "{}solarmass_star.ecsv".format(config.savename), overwrite=True)

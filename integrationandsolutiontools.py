@@ -5,7 +5,7 @@ import config
 #reading in Porf. Schlaufman's constants file
 exec(open("./constants.py").read())
 
-def shootf(guess, mc = 1e-12, mf=0.31, ms = 0.9999, steps=1e6):
+def shootf(guess, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6):
     """
     inputs: guess (np.array): with
                 L (float): luminosity emitted from a sphere enclosing m (ergs s^-1)
@@ -26,18 +26,20 @@ def shootf(guess, mc = 1e-12, mf=0.31, ms = 0.9999, steps=1e6):
     masses_cen = np.linspace(mc*config.MASS, mf*config.MASS, num=int(steps/2))
     solc = solve_ivp(derivs, (masses_cen[0], masses_cen[-1]), center_guess, t_eval = masses_cen)
     if np.isnan(np.sum(solc.y[:, -1])):
-        return np.inf
-    
+        return [np.inf, np.inf, np.inf, np.inf]
+
     surface_guess = surface_bc(config.MASS*ms, L, R)
     masses_surf = np.linspace(config.MASS*ms, config.MASS*mf, num=int(steps/2))
     sols = solve_ivp(fun = derivs, t_span = (masses_surf[0], masses_surf[-1]), y0 = surface_guess, t_eval = masses_surf)
     if np.isnan(np.sum(sols.y[:, -1])):
-        return np.inf
+        return [np.inf, np.inf, np.inf, np.inf]
 
+    score = np.sum(np.abs((solc.y[:, -1] - sols.y[:, -1])/guess))
     residual = (solc.y[:, -1] - sols.y[:, -1])/guess
-    return np.sum(np.abs(residual))
+    print(residual)
+    return residual
 
-def solution(guess, mc = 1e-12, mf=0.31, ms = 0.9999, steps=1e6):
+def solution(guess, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6):
     """
     inputs: guess (np.array): with
                 L (float): luminosity emitted from a sphere enclosing m (ergs s^-1)
@@ -59,11 +61,11 @@ def solution(guess, mc = 1e-12, mf=0.31, ms = 0.9999, steps=1e6):
 
     center_guess = center_bc(mc*config.MASS, P, T)
     masses_cen = np.linspace(mc*config.MASS, mf*config.MASS, num=int(steps/2))
-    solc = solve_ivp(derivs, (masses_cen[0], masses_cen[-1]), center_guess, t_eval = masses_cen, args=True)
+    solc = solve_ivp(derivs, (masses_cen[0], masses_cen[-1]), center_guess, t_eval = masses_cen)
     
     surface_guess = surface_bc(config.MASS*ms, L, R)
-    masses_surf = np.linspace(config.MASS*ms, config.MASS*mf, num=int(steps/2)) #solving this one from the surface to mf
-    sols = solve_ivp(fun = derivs, t_span = (masses_surf[0], masses_surf[-1]), y0 = surface_guess, t_eval = masses_surf, args=True)
+    masses_surf = np.linspace(config.MASS*ms, config.MASS*mf, num=int(steps/2))
+    sols = solve_ivp(fun = derivs, t_span = (masses_surf[0], masses_surf[-1]), y0 = surface_guess, t_eval = masses_surf)
     
     msol = np.concatenate((solc.t, np.flip(sols.t)))
     Lsol = np.concatenate((solc.y[0], np.flip(sols.y[0])))
@@ -71,4 +73,9 @@ def solution(guess, mc = 1e-12, mf=0.31, ms = 0.9999, steps=1e6):
     Tsol = np.concatenate((solc.y[2], np.flip(sols.y[2])))
     Rsol = np.concatenate((solc.y[3], np.flip(sols.y[3])))
 
-    return msol, Lsol, Psol, Tsol, Rsol, Esol, kappasol, Deltaadsol, Deltasol, convectivesol
+    rhosol = density(Psol, Tsol)
+    Esol = eng_gen_pp(rhosol, Tsol)+eng_gen_cno(rhosol, Tsol)
+    kappasol = 10**config.interp(np.log10(rhosol), np.log10(Tsol))
+    _, Delta_ad, Delta_rad, Delta = Delta_finder(msol, Lsol, Psol, Tsol, Rsol, kappasol, True)
+    nature = np.where(Delta == Delta_ad, "radiative", "convective")
+    return msol, Lsol, Psol, Tsol, Rsol, Esol, kappasol, Delta_ad, Delta_rad, Delta, nature

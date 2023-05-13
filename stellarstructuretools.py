@@ -17,12 +17,10 @@ def eng_gen_pp(rho, T):
     T9 = T/(10**9)
     g11 = 1 + (3.82*T9) + (1.51*(T9**2)) + (0.144*(T9**3)) - (0.0114*(T9**4))
     E_pp = (2.57 * (10**4) * f11 * g11 * rho * (config.X**2) * (T9**(-2/3)) * np.exp(-3.381*(T9**(-1/3))))
-    if E_pp < 0:
-        return np.nan
-    else:
-        return (2.57 * (10**4) * f11 * g11 * rho * (config.X**2) * (T9**(-2/3)) * np.exp(-3.381*(T9**(-1/3))))
 
-def eng_gen_CNO(rho, T):    
+    return (2.57 * (10**4) * f11 * g11 * rho * (config.X**2) * (T9**(-2/3)) * np.exp(-3.381*(T9**(-1/3))))
+
+def eng_gen_cno(rho, T):    
     """
     CNO cycle energy generation rate
     inputs: rho (float): density (g cm^-3)
@@ -35,10 +33,8 @@ def eng_gen_CNO(rho, T):
     g14_1 = 1 - (2.00*T9) + (3.41*(T9**2)) - (2.43*(T9**3))
     X_CNO = config.Z #(should be X_C + X_N + X_O instead of Z)
     E_CNO = (8.24*(10**25) * g14_1* X_CNO*config.X*rho*(T9**(-2/3)) * np.exp(-15.231*(T9**(-1/3)) - ((T9/0.8)**2)))
-    if E_CNO < 0:
-        return np.nan
-    else:
-        return E_CNO
+    
+    return E_CNO
 
 def density(P, T):
     """
@@ -86,7 +82,6 @@ def opacity_vs_total_pressure(rho, T, R):
     """
     return (1 - (pressure_opacity(rho, T, R)/pressure_total(rho, T)))
 
-#ignoring Ep_v and Ep_g (neutrinos and gravity??)
 def center_bc(m, P, T):
     """
     find the central boundary conditions
@@ -102,28 +97,28 @@ def center_bc(m, P, T):
     """
     rho_c = density(P, T)
     if rho_c < 0:
-        return [np.nan, np.nan, np.nan, np.nan]
+        return np.array([np.nan, np.nan, np.nan, np.nan])
     
     r = (((3*m)/(4*np.pi*rho_c))**(1/3))
     P = ((-3*G)/(8*np.pi))*(((4/3)*np.pi*rho_c)**(4/3))*((m)**(2/3))+P
-    energy_gen = eng_gen_pp(rho_c, T)+eng_gen_CNO(rho_c, T)
+    energy_gen = eng_gen_pp(rho_c, T)+eng_gen_cno(rho_c, T)
     L = energy_gen * (m)
     
-    kappa = 10**(config.interp(np.log10(rho_c), np.log10(T)))
-    Delta_rad = (3/(16*np.pi*a*c))*((P*kappa)/(T**4))*(L/(G*m))
-    dTdm = -((G*m*T)/(4*np.pi*(r**4)*P))*Delta_rad
-    Delta_ad = ((-4*np.pi*(r**4)*P)/(G*m*T))*dTdm
-    if Delta_rad > Delta_ad:
-        T = np.exp((((np.pi/6)**(1/3))*G
-                    *((Delta_ad*(rho_c**(4/3)))/P)
-                    *(m**(2/3)))
-                    +np.log(T)
-                  )
+    try:
+        kappa = 10**(config.interp(np.log10(rho_c), np.log10(T)))
+    except:
+        print("integrating out of bounds")
+        return None
+    _, Delta_ad, Delta = Delta_finder(m, L, P, T, r, kappa)
+    if Delta > Delta_ad:
+        T = np.exp((((np.pi/6)**(1/3))*G*((Delta*(rho_c**(4/3)))/P)
+            *(m**(2/3)))+np.log(T)
+          )
     else:
         T = (((-1/(2*a*c))*((3/(4*np.pi))**(2/3))
               *kappa*energy_gen*(rho_c**(4/3))*((m)**(2/3)))
               +T**4)**0.25
-    return [L, P, T, r]
+    return np.array([L, P, T, r])
 
 def surface_bc(m, L, R):
     """
@@ -159,19 +154,42 @@ def derivs(m, dep_vs):
     """
     L, P, T, r = dep_vs
     rho = density(P, T)
-    dLdm = eng_gen_pp(rho, T) + eng_gen_CNO(rho, T)
-    dPdm = -((G*m)/(4*np.pi*(r**4)))
-    
-    drdm = 1/(4*np.pi*(r**2)*rho)
     kappa = 10**(config.interp(np.log10(rho), np.log10(T)))
-    Delta_rad = (3/(16*np.pi*a*c)) * ((P*kappa)/(T**4)) * (L/(G*m))
-    
-    dTdm = -((G*m*T)/(4*np.pi*(r**4)*P))*Delta_rad
-    Delta_ad = ((-4*np.pi*(r**4)*P)/(G*m*T))*dTdm
-    if Delta_rad > Delta_ad:
-        dTdm = -((G*m*T)/(4*np.pi*(r**4)*P))*Delta_ad
-    
+    #print(m, L, P, T, r, kappa)
+    dLdm = eng_gen_pp(rho, T) + eng_gen_cno(rho, T)
+    dPdm = -((G*m)/(4*np.pi*(r**4)))
+    drdm = 1/(4*np.pi*(r**2)*rho)
+    dTdm, _, _ = Delta_finder(m, L, P, T, r, kappa)
+    #print(dTdm)
     if np.isnan(np.sum([dLdm, dPdm, dTdm, drdm])):
         return np.nan
     else:
         return np.array([dLdm, dPdm, dTdm, drdm])
+
+def Delta_finder(m, L, P, T, r, kappa, return_Delta_rad = False):
+    """
+    returns: dTdm
+             Delta_ad
+             actual Delta
+    """
+    #print(m, L, P, T, r, kappa)
+    Delta_rad = (3/(16*np.pi*a*c)) * ((P*kappa)/(T**4)) * (L/(G*m))
+    Delta = np.where(Delta_rad <= config.Delta_ad, Delta_rad, config.Delta_ad)
+    dTdm = -((G*m*T)/(4*np.pi*(r**4)*P))*Delta
+    #if Delta_rad > config.Delta_ad:
+    #    Delta = config.Delta_ad
+    #    dTdm = -((G*m*T)/(4*np.pi*(r**4)*P))*Delta
+    #else:
+    #    Delta = Delta_rad
+    #    dTdm = -((G*m*T)/(4*np.pi*(r**4)*P))*Delta
+    if return_Delta_rad:
+        return dTdm, config.Delta_ad, Delta_rad, Delta
+    else:
+        return dTdm, config.Delta_ad, Delta
+
+"""    if Delta_rad > Delta_ad:
+        dTdm = -((G*m*T)/(4*np.pi*(r**4)*P))*Delta_ad
+        return dTdm, Delta_ad, Delta_ad
+    else:
+        return dTdm, Delta_ad, Delta_rad"""
+
