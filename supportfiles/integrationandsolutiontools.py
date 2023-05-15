@@ -7,6 +7,9 @@ exec(open("./supportfiles/constants.py").read())
 
 def shootf(guess, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6):
     """
+    Implementation of the shooting method. Integrates from the center to a fitting point and from the exterior to the 
+    same fitting point. Returns a vector of modified residuals describing the disagreement at the fitting point.
+
     inputs: guess (np.array): with
                 L (float): luminosity emitted from a sphere enclosing m (ergs s^-1)
                 P (float): pressure at the surface of a sphere enclosing m (dyne cm^-2)
@@ -36,11 +39,12 @@ def shootf(guess, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6):
         return [np.inf, np.inf, np.inf, np.inf]
 
     modresidual = (solc.y[:, -1] - sols.y[:, -1])/guess
-    print(modresidual)
     return modresidual
 
-def solution(guess, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6, returnedsteps = 1e2):
+def solution(guess, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6, returnedsteps = 1e3):
     """
+
+
     inputs: guess (np.array): with
                 L (float): luminosity emitted from a sphere enclosing m (ergs s^-1)
                 P (float): pressure at the surface of a sphere enclosing m (dyne cm^-2)
@@ -57,7 +61,11 @@ def solution(guess, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6, returnedsteps = 
              Psol (array): log pressure solution array (log dyne cm^-2)
              Tsol (array): log temperature solution array (log K)
              Rsol (array): log radius solution array (log cm)
-             Esol, kappasol, Deltaadsol, Deltasol, convectivesol
+             Esol
+             kappasol
+             Deltaadsol
+             Deltasol
+             convectivesol
     """
     L, P, T, R = guess
 

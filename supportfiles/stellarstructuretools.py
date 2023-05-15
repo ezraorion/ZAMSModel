@@ -46,7 +46,7 @@ def density(P, T):
     returns: rho (float): density (g cm^-3)
     """
     rho = ((P-(a*(T**4)/3))*config.mu)/(Na*k*T) #from 3.104
-    return rho
+    return np.where(rho<=0, 1e-1000, rho)
 
 def pressure_opacity(rho, T, R):
     """
@@ -97,7 +97,7 @@ def center_vals(m, P, T):
             R (float): radius of a sphere enclosing m (cm)
     """
     rho_c = density(P, T)
-    if rho_c < 0:
+    if rho_c <= 0:
         return np.array([np.nan, np.nan, np.nan, np.nan])
     
     r = (((3*m)/(4*np.pi*rho_c))**(1/3))
@@ -108,17 +108,17 @@ def center_vals(m, P, T):
     try:
         kappa = 10**(config.interp(np.log10(rho_c), np.log10(T)))
     except:
-        print("integrating out of bounds")
+        print("Failed to calculate kappa. Are you trying to interpolate out of bounds?")
         return np.array([np.nan, np.nan, np.nan, np.nan])
 
-    _, Delta_ad, Delta = Delta_finder(m, L, P, T, r, kappa)
-    if Delta > Delta_ad:
+    _, Delta_ad, Delta_rad, Delta = Delta_finder(m, L, P, T, r, kappa, True)
+    if Delta_rad > Delta_ad:
         T = np.exp((((np.pi/6)**(1/3))*G*((Delta*(rho_c**(4/3)))/P)
-            *(m**(2/3)))+np.log(T))
+            *(m**(2/3)))+np.log(T)) #CONVECTIVE
     else:
         T = (((-1/(2*a*c))*((3/(4*np.pi))**(2/3))
               *kappa*energy_gen*(rho_c**(4/3))*((m)**(2/3)))
-              +T**4)**0.25
+              +T**4)**0.25 #RADIATIVE
     return np.array([L, P, T, r])
 
 def surface_vals(m, L, R):
@@ -171,7 +171,6 @@ def Delta_finder(m, L, P, T, r, kappa, return_Delta_rad = False):
              Delta_ad
              actual Delta
     """
-    #print(m, L, P, T, r, kappa)
     Delta_rad = (3/(16*np.pi*a*c)) * ((P*kappa)/(T**4)) * (L/(G*m))
     Delta = np.where(Delta_rad <= config.Delta_ad, Delta_rad, config.Delta_ad)
     dTdm = -((G*m*T)/(4*np.pi*(r**4)*P))*Delta

@@ -8,7 +8,7 @@ import supportfiles.config as config
 matplotlib.use('Agg') #will save figures, but supresses plotting
 #plt.style.use("dark_background")
 
-table = ascii.read("{}Ms_star.ecsv".format(config.savename))
+table = Table.read("results/{}Ms_star.mrt".format(config.savename), format="mrt")
 #msol, Lsol, Psol, Tsol, Rsol = npzfile['msol'], npzfile['Lsol'], npzfile['Psol'], npzfile['Tsol'], npzfile['Rsol']
 #table.pprint()
 figsize=(10,10)
@@ -42,17 +42,17 @@ plt.savefig("./plots/internalstructure_r_{}Ms.png".format(config.savename))
 plt.close()
 
 figsize=(10,10)
-plt.plot(table["M"]/table["M"][-1], table["Deltaad"], label="$\Delta_{ad}$", c="dodgerblue")
-plt.plot(table["M"]/table["M"][-1], table["Deltarad"], label="$\Delta_{rad}$", c = "magenta")
-radiative = np.where(table["Deltarad"] <= table["Deltaad"], True, False)
-convective = np.where(table["Deltarad"] > table["Deltaad"])
+plt.plot(table["M"]/table["M"][-1], table["Deltaad"], label="$\Delta_{ad}$", c="magenta")
+plt.plot(table["M"]/table["M"][-1], table["Deltarad"], label="$\Delta_{rad}$", c = "dodgerblue")
+convective = np.where(table["Deltarad"] <= table["Deltaad"], True, False)
+radiative = np.where(table["Deltarad"] > table["Deltaad"])
 radiativemasses = (table["M"]/table["M"][-1])[radiative]
 convectivemasses = (table["M"]/table["M"][-1])[convective]
 if radiativemasses[0] != np.min(radiativemasses)\
 	or radiativemasses[-1] != np.max(radiativemasses)\
 	or convectivemasses[0] != np.min(convectivemasses)\
 	or convectivemasses[-1] != np.max(convectivemasses):
-		print("Can't do fill between because the situation is more cmmplicated "
+		print("Can't do fill between plot because the situation is more commplicated "
 			  +"that one convective zone and one radiative zone.")
 else:
 	ylim = [0, 1]
