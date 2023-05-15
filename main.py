@@ -35,8 +35,7 @@ rho_const = (3*config.MASS)/(4*np.pi*(Rt**3))
 Pc = (3*G*(config.MASS**2))/(8*np.pi*(Rt**4))
 Tc = (G*config.MASS*config.mu)/(2*Rt*Na*k) 
 
-print(Lt)
-FUDGEFACTORS = np.array([1, 1, 1, 1]) #constant density model will lowball pressure, so bumping that up a bit
+FUDGEFACTORS = np.array([1, 1.1, 1, 1]) #constant density model will lowball pressure, so bumping that up a bit
 sol = root(shootf, np.array([Lt, Pc, Tc, Rt])*FUDGEFACTORS)
 print(sol)
 
@@ -57,8 +56,8 @@ data["nature"] = nature
 #data.round(decimals={"M":-28, "L":-20, "P":-2, "T":-1})
 #data.pprint()
 
-#ascii.write(data, "{}Ms_star.ecsv".format(config.savename), overwrite=True)
-tablemaker = cdspyreadme.CDSTablesMaker()
-tablemaker.addTable(data, name="results/{}Ms_star.txt".format(config.savename))
-tablemaker.writeCDSTables()
-tablemaker.makeReadMe()
+ascii.write(data, "results/{}Ms_star.mrt".format(config.savename), format="mrt", overwrite=True)
+#tablemaker = cdspyreadme.CDSTablesMaker()
+#tablemaker.addTable(data, name="results/{}Ms_star.txt".format(config.savename))
+#tablemaker.writeCDSTables()
+#tablemaker.makeReadMe()

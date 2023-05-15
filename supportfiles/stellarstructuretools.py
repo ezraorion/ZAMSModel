@@ -106,14 +106,13 @@ def center_vals(m, P, T):
     L = energy_gen * (m)
     
     try:
-        print(rho_c, T)
         kappa = 10**(config.interp(np.log10(rho_c), np.log10(T)))
     except:
         print("Failed to calculate kappa. Are you trying to interpolate out of bounds?")
         return np.array([np.nan, np.nan, np.nan, np.nan])
 
-    _, Delta_ad, Delta = Delta_finder(m, L, P, T, r, kappa)
-    if Delta > Delta_ad:
+    _, Delta_ad, Delta_rad, Delta = Delta_finder(m, L, P, T, r, kappa, True)
+    if Delta_rad > Delta_ad:
         T = np.exp((((np.pi/6)**(1/3))*G*((Delta*(rho_c**(4/3)))/P)
             *(m**(2/3)))+np.log(T)) #CONVECTIVE
     else:
@@ -172,9 +171,8 @@ def Delta_finder(m, L, P, T, r, kappa, return_Delta_rad = False):
              Delta_ad
              actual Delta
     """
-    #print(m, L, P, T, r, kappa)
     Delta_rad = (3/(16*np.pi*a*c)) * ((P*kappa)/(T**4)) * (L/(G*m))
-    Delta = np.where(Delta_rad > config.Delta_ad, Delta_rad, config.Delta_ad)
+    Delta = np.where(Delta_rad <= config.Delta_ad, Delta_rad, config.Delta_ad)
     dTdm = -((G*m*T)/(4*np.pi*(r**4)*P))*Delta
     #if Delta_rad > config.Delta_ad:
     #    Delta = config.Delta_ad

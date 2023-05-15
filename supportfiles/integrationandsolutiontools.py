@@ -39,10 +39,9 @@ def shootf(guess, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6):
         return [np.inf, np.inf, np.inf, np.inf]
 
     modresidual = (solc.y[:, -1] - sols.y[:, -1])/guess
-    print(solc.y[0, -1], sols.y[0, -1], modresidual)
     return modresidual
 
-def solution(guess, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6, returnedsteps = 1e2):
+def solution(guess, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6, returnedsteps = 1e3):
     """
 
 
