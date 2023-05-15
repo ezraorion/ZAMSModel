@@ -1,8 +1,8 @@
 #reading in Porf. Schlaufman's constants file
 exec(open("./supportfiles/constants.py").read())
 
-MASS = Ms*2
-savename = "2" #make this particular to this stars mass (i.e. 2 for a 2.00 solar mass star)
+MASS = Ms*1.435
+savename = "1_435" #make this particular to this stars mass (i.e. 2 for a 2.00 solar mass star)
 #Grevesse & Noels (1993) table from https://opalopacity.llnl.gov/existing.html#type1W
 fn = "./supportfiles/GN93hz.txt"
 tablenum = 73

@@ -16,8 +16,10 @@ def eng_gen_pp(rho, T):
     f11 = np.exp(5.92*(10**-3) *2*4* ((rho* ((T/(10**7))**-3))**0.5))
     T9 = T/(10**9)
     g11 = 1 + (3.82*T9) + (1.51*(T9**2)) + (0.144*(T9**3)) - (0.0114*(T9**4))
-    E_pp = (2.57 * (10**4) * f11 * g11 * rho * (config.X**2) * (T9**(-2/3)) * np.exp(-3.381*(T9**(-1/3))))
-    return (2.57 * (10**4) * f11 * g11 * rho * (config.X**2) * (T9**(-2/3)) * np.exp(-3.381*(T9**(-1/3))))
+    E_pp = (2.57 * (10**4) * f11 * g11 * rho * (config.X**2)
+            *(T9**(-2/3)) * np.exp(-3.381*(T9**(-1/3))))
+    return (2.57*(10**4)*f11*g11*rho*(config.X**2) 
+            *(T9**(-2/3))*np.exp(-3.381*(T9**(-1/3))))
 
 def eng_gen_cno(rho, T):    
     """
@@ -31,7 +33,8 @@ def eng_gen_cno(rho, T):
     T9 = T/(10**9)
     g14_1 = 1 - (2.00*T9) + (3.41*(T9**2)) - (2.43*(T9**3))
     X_CNO = config.Z #(should be X_C + X_N + X_O instead of Z)
-    E_CNO = (8.24*(10**25) * g14_1* X_CNO*config.X*rho*(T9**(-2/3)) * np.exp(-15.231*(T9**(-1/3)) - ((T9/0.8)**2)))
+    E_CNO = (8.24*(10**25) * g14_1* X_CNO*config.X*rho*(T9**(-2/3))
+            *np.exp(-15.231*(T9**(-1/3)) - ((T9/0.8)**2)))
     return E_CNO
 
 def density(P, T):
@@ -80,9 +83,9 @@ def opacity_vs_total_pressure(rho, T, R):
     """
     return (1 - (pressure_opacity(rho, T, R)/pressure_total(rho, T)))
 
-def center_bc(m, P, T):
+def center_vals(m, P, T):
     """
-    find the central boundary conditions
+    find the central values from the boundary conditions
     at a mass point m near the center of a star, find L, P, r, & T
     inputs: m (float): mass point (g)
             P (float): guess for the central pressure (dyne cm^-2)
@@ -106,21 +109,21 @@ def center_bc(m, P, T):
         kappa = 10**(config.interp(np.log10(rho_c), np.log10(T)))
     except:
         print("integrating out of bounds")
-        return None
+        return np.array([np.nan, np.nan, np.nan, np.nan])
+
     _, Delta_ad, Delta = Delta_finder(m, L, P, T, r, kappa)
     if Delta > Delta_ad:
         T = np.exp((((np.pi/6)**(1/3))*G*((Delta*(rho_c**(4/3)))/P)
-            *(m**(2/3)))+np.log(T)
-          )
+            *(m**(2/3)))+np.log(T))
     else:
         T = (((-1/(2*a*c))*((3/(4*np.pi))**(2/3))
               *kappa*energy_gen*(rho_c**(4/3))*((m)**(2/3)))
               +T**4)**0.25
     return np.array([L, P, T, r])
 
-def surface_bc(m, L, R):
+def surface_vals(m, L, R):
     """
-    find the surface boundary conditions
+    find the surface values from boundary conditions
     inputs: m (float): mass point (g)
             L (float): guess for the total luminosity (ergs s^-1)
             R (float): guess for the total radius (cm)
@@ -131,6 +134,8 @@ def surface_bc(m, L, R):
             R (float): total radius (cm)
     """
     T = (L/(np.pi * (R**2) * a * c))**0.25
+    #if you want to see info about the convergence, set full_output = True, add another variable to store
+    #the ouptut in, and print that variable
     rho = brentq(opacity_vs_total_pressure, 1e-12, 1e-6, args=(T, R))
     P = pressure_opacity(rho, T, R)
     return np.array([L, P, T, R]) #just returning the same radius & luminosity you feed in...
@@ -153,16 +158,12 @@ def derivs(m, dep_vs):
     L, P, T, r = dep_vs
     rho = density(P, T)
     kappa = 10**(config.interp(np.log10(rho), np.log10(T)))
-    #print(m, L, P, T, r, kappa)
     dLdm = eng_gen_pp(rho, T) + eng_gen_cno(rho, T)
     dPdm = -((G*m)/(4*np.pi*(r**4)))
     drdm = 1/(4*np.pi*(r**2)*rho)
     dTdm, _, _ = Delta_finder(m, L, P, T, r, kappa)
-    #print(dTdm)
-    if np.isnan(np.sum([dLdm, dPdm, dTdm, drdm])):
-        return np.nan
-    else:
-        return np.array([dLdm, dPdm, dTdm, drdm])
+
+    return np.array([dLdm, dPdm, dTdm, drdm])
 
 def Delta_finder(m, L, P, T, r, kappa, return_Delta_rad = False):
     """
