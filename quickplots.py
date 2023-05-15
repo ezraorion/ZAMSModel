@@ -44,15 +44,15 @@ plt.close()
 figsize=(10,10)
 plt.plot(table["M"]/table["M"][-1], table["Deltaad"], label="$\Delta_{ad}$", c="dodgerblue")
 plt.plot(table["M"]/table["M"][-1], table["Deltarad"], label="$\Delta_{rad}$", c = "magenta")
-radiative = np.where(table["Deltarad"] <= table["Deltaad"], True, False)
-convective = np.where(table["Deltarad"] > table["Deltaad"])
+radiative = np.where(table["Deltarad"] < table["Deltaad"], True, False)
+convective = np.where(table["Deltarad"] >= table["Deltaad"])
 radiativemasses = (table["M"]/table["M"][-1])[radiative]
 convectivemasses = (table["M"]/table["M"][-1])[convective]
 if radiativemasses[0] != np.min(radiativemasses)\
 	or radiativemasses[-1] != np.max(radiativemasses)\
 	or convectivemasses[0] != np.min(convectivemasses)\
 	or convectivemasses[-1] != np.max(convectivemasses):
-		print("Can't do fill between because the situation is more cmmplicated "
+		print("Can't do fill between plot because the situation is more commplicated "
 			  +"that one convective zone and one radiative zone.")
 else:
 	ylim = [0, 1]
