@@ -7,7 +7,7 @@ from supportfiles.readingtablestools import getTRandK, getlogrho
 from supportfiles.integrationandsolutiontools import shootf, solution
 import supportfiles.config as config
 #reading in Porf. Schlaufman's constants file
-exec(open("./supportfiles/constants.py").read())
+from supportfiles.constants import *
 
 logR, logkappa, logT = getTRandK(config.fn, config.tablenum)
 #make logT and logR arrays in the shape of the kappa array

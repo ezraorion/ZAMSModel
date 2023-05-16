@@ -3,7 +3,7 @@ from scipy.integrate import solve_ivp
 from supportfiles.stellarstructuretools import *
 import supportfiles.config as config
 #reading in Prof. Schlaufman's constants file
-exec(open("./supportfiles/constants.py").read())
+from supportfiles.constants import *
 
 def shootf(guess, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6):
     """
@@ -33,23 +33,17 @@ def shootf(guess, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6):
     """
     L, P, T, R = guess
 
-    #if either solution fails to converge (will have nans), return np.inf so 
-    #minimize knows this guess was bad
     center_guess = center_vals(mc * config.MASS, P, T)
     masses_cen = np.linspace(mc * config.MASS, mf * config.MASS, 
                              num=int(steps/2))
     solc = solve_ivp(derivs, (masses_cen[0], masses_cen[-1]), center_guess, 
                      t_eval = masses_cen)
-    if np.isnan(np.sum(solc.y[:, -1])):
-        return [np.inf, np.inf, np.inf, np.inf]
 
     surface_guess = surface_vals(config.MASS * ms, L, R)
     masses_surf = np.linspace(config.MASS * ms, config.MASS * mf, 
                   num=int(steps/2))
     sols = solve_ivp(fun = derivs, t_span = (masses_surf[0], masses_surf[-1]),
                      y0 = surface_guess, t_eval = masses_surf)
-    if np.isnan(np.sum(sols.y[:, -1])):
-        return [np.inf, np.inf, np.inf, np.inf]
 
     modresidual = (solc.y[:, -1] - sols.y[:, -1])/guess
     return modresidual
@@ -92,11 +86,13 @@ def solution(bestbc, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6,
 
     center_guess = center_vals(mc*config.MASS, P, T)
     masses_cen = np.linspace(mc*config.MASS, mf*config.MASS, num=int(steps/2))
-    solc = solve_ivp(derivs, (masses_cen[0], masses_cen[-1]), center_guess, t_eval = masses_cen)
+    solc = solve_ivp(derivs, (masses_cen[0], masses_cen[-1]), center_guess, 
+                     t_eval = masses_cen)
     
     surface_guess = surface_vals(config.MASS*ms, L, R)
     masses_surf = np.linspace(config.MASS*ms, config.MASS*mf, num=int(steps/2))
-    sols = solve_ivp(fun = derivs, t_span = (masses_surf[0], masses_surf[-1]), y0 = surface_guess, t_eval = masses_surf)
+    sols = solve_ivp(fun = derivs, t_span = (masses_surf[0], masses_surf[-1]), 
+                     y0 = surface_guess, t_eval = masses_surf)
     
     msol0 = np.concatenate((solc.t, np.flip(sols.t)))
     Lsol0 = np.concatenate((solc.y[0], np.flip(sols.y[0])))
@@ -113,6 +109,8 @@ def solution(bestbc, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6,
     rhosol = density(Psol, Tsol)
     Esol = eng_gen_pp(rhosol, Tsol)+eng_gen_cno(rhosol, Tsol)
     kappasol = 10**config.interp(np.log10(rhosol), np.log10(Tsol))
-    _, Delta_ad, Delta_rad, Delta = Delta_finder(msol, Lsol, Psol, Tsol, Rsol, kappasol, True)
+    _, Delta_ad, Delta_rad, Delta = Delta_finder(msol, Lsol, Psol, Tsol, Rsol, 
+                                                 kappasol, True)
     nature = np.where(Delta == Delta_ad, "radiative", "convective")
-    return msol, rhosol, Lsol, Psol, Tsol, Rsol, Esol, kappasol, Delta_ad, Delta_rad, Delta, nature
+    return(msol, rhosol, Lsol, Psol, Tsol, Rsol, Esol, kappasol, Delta_ad, 
+           Delta_rad, Delta, nature)

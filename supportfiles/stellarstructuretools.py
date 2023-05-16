@@ -6,7 +6,8 @@ from supportfiles.constants import *
 
 def eng_gen_pp(rho, T):
     """
-    pp-chain energy generation rate
+    Calculate the PP-chain energy generation rate.
+
     inputs: rho (float): density (g cm^-3)
              T (float): temperature (K)
              
@@ -25,7 +26,7 @@ def eng_gen_pp(rho, T):
 
 def eng_gen_cno(rho, T):    
     """
-    CNO cycle energy generation rate
+    Calculate the CNO cycle energy generation rate.
 
     inputs: rho (float): density (g cm^-3)
              T (float): temperature (K)
@@ -93,8 +94,9 @@ def opacity_vs_total_pressure(rho, T, R):
 
 def center_vals(m, P, T):
     """
-    find the central values from the boundary conditions
-    at a mass point m near the center of a star, find L, P, r, & T
+    Find the central values from the boundary conditions at a mass point m 
+    near the center of a star, find L, P, r, & T.
+
     inputs: m (float): mass point (g)
             P (float): guess for the central pressure (dyne cm^-2)
             T (float): guess for the central temperature (K)
