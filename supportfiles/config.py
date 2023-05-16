@@ -1,5 +1,5 @@
 #reading in Prof. Schlaufman's constants file
-exec(open("./supportfiles/constants.py").read())
+from supportfiles.constants import *
 
 MASS = Ms*1.435
 savename = "1_435" #make this particular to this stars mass 

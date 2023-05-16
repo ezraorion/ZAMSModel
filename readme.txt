@@ -1,6 +1,7 @@
 readme.txt this file
 main.py the main script. saves a file with the profile of the star.
 quickplots.py makes plots. 1. L, P, T, and R with respect to mass throughout the star. 2. L, P, T, and m with respect to radius. 3. delta_ad vs. delta_rad with respect to mass.
+mesacompare.py compares model results with mesa results. (Beware: hard coded paths in the file).
 
 supportfiles/
 config.py file with the parameters that can be changed by the user. (Stellar mass, opacity table, abundances...)
