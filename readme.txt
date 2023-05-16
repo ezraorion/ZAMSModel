@@ -14,3 +14,4 @@ plots/
 Delta_1_435Ms.png shows delta_ad and delta_rad over the mass profile of a 1_435 solar mass star.
 internalstructure_1_435Ms.png shows how L, P, R, and T change over the mass profile of a 1_435 solar mass star.
 internalstructure_r_1_435Ms.png shows how L, P, R, and T change over the mass profile of a 1_435 solar mass star.
+KWW_SSE_2nd_ed_fig18_8_match.png My verion of Fig. 18.8 in Stellar Structure and Evolution (Kippenhahn, Weigert, & Weiss), verifying my energy generation rates from the PP-chain and CNO cycle.
