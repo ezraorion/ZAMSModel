@@ -88,7 +88,7 @@ def solution(bestbc, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6,
              Delta (array): actual temperature gradient 
              nature (array): is this region convective or radiative?
     """
-    L, P, T, R = guess
+    L, P, T, R = bestbc
 
     center_guess = center_vals(mc*config.MASS, P, T)
     masses_cen = np.linspace(mc*config.MASS, mf*config.MASS, num=int(steps/2))

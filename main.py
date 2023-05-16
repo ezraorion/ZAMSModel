@@ -16,9 +16,8 @@ logR_k = np.tile(logR[np.newaxis, :], (logkappa.shape[0], 1))
 logrho_k = getlogrho(logR_k, logT_k)
 Xgrid, Ygrid = np.meshgrid(np.linspace(-9, 3, 1000), 
                            np.linspace(3.75, 7.5, 1000))
-interp = LinearNDInterpolator((logrho_k.flatten(), logT_k.flatten()), 
+config.interp = LinearNDInterpolator((logrho_k.flatten(), logT_k.flatten()), 
                                logkappa.flatten())
-config.interp = interp
 
 Rt = ((config.MASS / Ms) ** 0.75) * Rs
 Lt = ((config.MASS / Ms) ** 3.5) * Ls
@@ -30,8 +29,7 @@ FUDGE_FACTORS = np.array([1, 1.1, 1, 1])
 sol = root(shootf, np.array([Lt, Pc, Tc, Rt]) * FUDGE_FACTORS)
 print(sol)
 
-msol, rhosol, Lsol, Psol, Tsol, Rsol, Esol, kappasol, Deltaadsol, 
-Deltaradsol, Deltasol, nature = solution(sol.x)
+msol, rhosol, Lsol, Psol, Tsol, Rsol, Esol, kappasol, Deltaadsol, Deltaradsol, Deltasol, nature = solution(sol.x)
 data = Table()
 data["M"] = msol
 data["rho"] = rhosol
