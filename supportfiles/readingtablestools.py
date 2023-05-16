@@ -4,7 +4,9 @@ import pandas as pd
 import supportfiles.config as config
 
 def getTRandK(fn, tablenum):
-    '''    
+    '''
+    Get temperature, R, and kappa columns from an opacity table.
+
     inputs:
         fn: (string) filename of the opacities table
         tablenum: (int) the number of the table from the LLNL opacities table
@@ -17,23 +19,26 @@ def getTRandK(fn, tablenum):
     with open(fn) as f:
         lines = f.readlines()
     start_loc = re.compile("TABLE") #finding the start of each table
-    tableind = [] #this will have the start of each table in it, with index = table # - 1
+    #tableind will have the start of each table in it, with index = table # - 1
+    tableind = []
     for n in range(len(lines)):
         if start_loc.match(lines[n]) != None:
             tableind.append(n)
 
     start = tableind[tablenum-1]
     end = tableind[tablenum]
-    logR = lines[start + 4].split()[1:] #making a list of the logRs & removing the logT string
+    #making a list of the logRs & removing the logT string
+    logR = lines[start + 4].split()[1:]
     logT = []
     kappa = []
-    for i in range(start+6,end-1):
-        logT.append(float(lines[i].split()[0])) #getting the Ts
-        prekappa = np.array(lines[i].split()[1:]).astype(float) #getting the kappas
-        prekappa = np.where(prekappa == 9.999, np.nan, prekappa) #9.999 is their bad value, switching it to np.nan
-        
-        #for some Rs and Ts there aren't values, they are at the end of the columns for Table 73, so adding np.nans
-        KAPPA_LEN = 19 #each kappa would be this long if there were no missing values
+    for i in range(start + 6, end - 1):
+        logT.append(float(lines[i].split()[0]))
+        prekappa = np.array(lines[i].split()[1:]).astype(float)
+        #9.999 is their bad value, switching it to np.nan
+        prekappa = np.where(prekappa == 9.999, np.nan, prekappa)
+        #for some Rs and Ts there aren't values, 
+        #they are at the end of the columns for Table 73, so adding np.nans
+        KAPPA_LEN = 19
         a = np.empty((KAPPA_LEN - len(prekappa)))
         a[:] = np.nan
         kappa.append(np.append(prekappa,a))
@@ -42,7 +47,8 @@ def getTRandK(fn, tablenum):
 
 def getlogrho(logR, logT):
     """
-    go from logR and logT to log rho
+    Go from logR and logT to log rho.
+
     input: 
         logR: (float) log density/T6**3 (log g cm^-3 K^-3)
         logT: (float) log temperature (log K)
@@ -50,7 +56,7 @@ def getlogrho(logR, logT):
     output:
         logrho:(float) log density (log g cm^-3)
     """
-    R = 10**logR
-    T6 = (10**logT)/(10**6)
-    return np.log10(R*(T6**3))
+    R = 10 ** logR
+    T6 = (10 ** logT)/(10 ** 6)
+    return np.log10(R* (T6 ** 3))
 

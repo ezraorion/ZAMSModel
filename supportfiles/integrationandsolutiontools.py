@@ -7,65 +7,86 @@ exec(open("./supportfiles/constants.py").read())
 
 def shootf(guess, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6):
     """
-    Implementation of the shooting method. Integrates from the center to a fitting point and from the exterior to the 
-    same fitting point. Returns a vector of modified residuals describing the disagreement at the fitting point.
+    Implementation of the shooting method. Integrates from the center to a 
+    fitting point and from the exterior to the same fitting point. Returns 
+    a vector of modified residuals describing the disagreement at the 
+    fitting point.
 
     inputs: guess (np.array): with
-                L (float): luminosity emitted from a sphere enclosing m (ergs s^-1)
-                P (float): pressure at the surface of a sphere enclosing m (dyne cm^-2)
-                T (float): temperature at the surface of a sphere enclosing m (K)
+                L (float): luminosity emitted from a sphere enclosing m 
+                           (ergs s^-1)
+                P (float): pressure at the surface of a sphere enclosing m 
+                           (dyne cm^-2)
+                T (float): temperature at the surface of a sphere enclosing m 
+                           (K)
                 R (float): radius of a sphere enclosing m (cm)
             mc (float): central mass point (fractional)
             mf (float): fitting mass point (fractional)
             ms (float): surface mass point (fractional)
-            steps (float): steps for integration. split equally between the interior and exterior solution
+            steps (float): steps for integration. split equally between the 
+                           interior and exterior solution
 
-    returns: score (float): agreement between the interior and exterior solution. should be 0 for a 
-                            perfect match, with increasing positive values representing increasingly poor matches.
+    returns: score (float): agreement between the interior and exterior 
+                            solution. should be 0 for a perfect match, with 
+                            increasing positive values representing 
+                            increasingly poor matches.
     """
     L, P, T, R = guess
 
-    #if either solution fails to converge (will have nans), return np.inf so minimize knows this guess was bad
-    center_guess = center_vals(mc*config.MASS, P, T)
-    masses_cen = np.linspace(mc*config.MASS, mf*config.MASS, num=int(steps/2))
-    solc = solve_ivp(derivs, (masses_cen[0], masses_cen[-1]), center_guess, t_eval = masses_cen)
+    #if either solution fails to converge (will have nans), return np.inf so 
+    #minimize knows this guess was bad
+    center_guess = center_vals(mc * config.MASS, P, T)
+    masses_cen = np.linspace(mc * config.MASS, mf * config.MASS, 
+                             num=int(steps/2))
+    solc = solve_ivp(derivs, (masses_cen[0], masses_cen[-1]), center_guess, 
+                     t_eval = masses_cen)
     if np.isnan(np.sum(solc.y[:, -1])):
         return [np.inf, np.inf, np.inf, np.inf]
 
-    surface_guess = surface_vals(config.MASS*ms, L, R)
-    masses_surf = np.linspace(config.MASS*ms, config.MASS*mf, num=int(steps/2))
-    sols = solve_ivp(fun = derivs, t_span = (masses_surf[0], masses_surf[-1]), y0 = surface_guess, t_eval = masses_surf)
+    surface_guess = surface_vals(config.MASS * ms, L, R)
+    masses_surf = np.linspace(config.MASS * ms, config.MASS * mf, 
+                  num=int(steps/2))
+    sols = solve_ivp(fun = derivs, t_span = (masses_surf[0], masses_surf[-1]),
+                     y0 = surface_guess, t_eval = masses_surf)
     if np.isnan(np.sum(sols.y[:, -1])):
         return [np.inf, np.inf, np.inf, np.inf]
 
     modresidual = (solc.y[:, -1] - sols.y[:, -1])/guess
     return modresidual
 
-def solution(guess, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6, returnedsteps = 1e3):
+def solution(bestbc, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6, 
+             returnedsteps = 1e4):
     """
+    Using the best boundary conditions from a run of shootf, integrate and 
+    return parameters of interest.
 
-
-    inputs: guess (np.array): with
-                L (float): luminosity emitted from a sphere enclosing m (ergs s^-1)
-                P (float): pressure at the surface of a sphere enclosing m (dyne cm^-2)
-                T (float): temperature at the surface of a sphere enclosing m (K)
+    inputs: bestbc (np.array): with
+                L (float): luminosity emitted from a sphere enclosing m 
+                           (ergs s^-1)
+                P (float): pressure at the surface of a sphere enclosing m 
+                           (dyne cm^-2)
+                T (float): temperature at the surface of a sphere enclosing m 
+                           (K)
                 R (float): radius of a sphere enclosing m (cm)
             mc (float): central mass point (fractional)
             mf (float): fitting mass point (fractional)
             ms (float): surface mass point (fractional)
-            steps (float): steps for integration. split equally between the interior and exterior solution.
-            returnedsteps (float): size of the arrays returned by this fuction -1
+            steps (float): steps for integration. split equally between the 
+                           interior and exterior solution
+            returnedsteps (float): size of the arrays returned by this 
+                                   function (-1)
 
     returns: msol (array): log mass solution array (log g)
              Lsol (array): log luminosity solution array (log ergs s^-1)
              Psol (array): log pressure solution array (log dyne cm^-2)
              Tsol (array): log temperature solution array (log K)
              Rsol (array): log radius solution array (log cm)
-             Esol
-             kappasol
-             Deltaadsol
-             Deltasol
-             convectivesol
+             Esol (array): energy generation rate (erg s^-1)
+             kappasol (array): opacity
+             Delta_ad (array): adiabatic temperature gradient 
+             Delt_rad (array): radiative temperature gradient 
+             Delta (array): actual temperature gradient 
+             nature (array): is this region convective or radiative?
     """
     L, P, T, R = guess
 
@@ -94,4 +115,4 @@ def solution(guess, mc = 1e-12, mf=0.2, ms = 0.9999, steps=1e6, returnedsteps = 
     kappasol = 10**config.interp(np.log10(rhosol), np.log10(Tsol))
     _, Delta_ad, Delta_rad, Delta = Delta_finder(msol, Lsol, Psol, Tsol, Rsol, kappasol, True)
     nature = np.where(Delta == Delta_ad, "radiative", "convective")
-    return msol, Lsol, Psol, Tsol, Rsol, Esol, kappasol, Delta_ad, Delta_rad, Delta, nature
+    return msol, rhosol, Lsol, Psol, Tsol, Rsol, Esol, kappasol, Delta_ad, Delta_rad, Delta, nature
